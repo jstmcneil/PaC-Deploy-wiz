@@ -1,0 +1,59 @@
+# Composite action preview.
+name: 'CloudFormation Deploy w/ PaC scan.'
+description: 'Performs a Policy-as-Code scan prior to deploying CloudFormation. If the scan fails, the scan does not proceed. Otherwise, it does.'
+inputs:
+  aws-access-key-id:
+     description: 'AWS Access Key ID.'
+     required: true
+  aws-secret-access-key:
+    description: 'AWS Secret Access Key.'
+    required: true
+  aws-region:
+    description: 'Region for deployment'
+    required: true
+  name:
+    description: "The name of the CloudFormation stack"
+    required: true
+  template:
+    description: "The path or URL to the CloudFormation template"
+    required: true
+  capabilities:
+    description: "The comma-delimited list of stack template capabilities to acknowledge. Defaults to 'CAPABILITY_IAM'"
+    required: false
+    default: "CAPABILITY_IAM"
+  parameter-overrides:
+    description: 'The parameters to override in the stack inputs. You can pass a comma-delimited list or a file URL. Comma-delimited list has each entry formatted as <ParameterName>=<ParameterValue>. A JSON file can be a local file with a "file://" prefix or remote URL or http://example.com/variables.json). A local file needs to be specified with an absolute path to it. The file should look like: [ { "ParameterKey": "KeyPairName", "ParameterValue": "MyKey" }]'
+    required: false
+
+runs:
+    using: "composite"
+    steps:
+      - name: Attempt-PaC-Scan
+        run: echo "[1/2] Running Policy-as-Code Scan!"
+        shell: bash
+      - name: CloudFormation Guard Check
+        uses: v838688_ual/wiz-pac@1.0
+        with:
+          template-to-scan:         ${{inputs.template}}
+          wiz-access-key:           ${{secrets.wiz_cli_key}}
+          wiz-secret-key:           ${{secrets.wiz_secret_key}}
+      - name: Attempt-To-Deploy
+        run: echo ""; echo -n "[2/2] Attempting to deploy supplied template!"
+        shell: bash
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id:      ${{inputs.aws-access-key-id}}
+          aws-secret-access-key:  ${{inputs.aws-secret-access-key}}
+          aws-region:             ${{inputs.aws-region}}
+      - name: AWS CloudFormation "Deploy CloudFormation Stack" Action for GitHub Actions
+        uses: aws-actions/aws-cloudformation-github-deploy@v1.0.3
+        id: cfn-deploy-step
+        with:
+          name:                   ${{inputs.name}}
+          template:               ${{inputs.template}}
+          capabilities:           ${{inputs.capabilities}}
+          parameter-overrides:    ${{inputs. parameter-overrides}}
+      - name: Print Stack ID
+        run: echo -e "📗 \033[0;32mSuccess!\033[0m"; echo -n "[Stack-ID] "; echo ${{ steps.cfn-deploy-step.outputs.stack-id }}
+        shell: bash
