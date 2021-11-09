@@ -38,7 +38,7 @@ runs:
         run: echo "[1/2] Running Policy-as-Code Scan!"
         shell: bash
       - name: CloudFormation Guard Check
-        uses: jstmcneil/wiz-action@1.0
+        uses: jstmcneil/wiz-action@1.1
         with:
           template-to-scan:         ${{inputs.template}}
           wiz-access-key:           ${{inputs.wiz_cli_key}}
