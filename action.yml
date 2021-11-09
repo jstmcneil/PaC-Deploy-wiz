@@ -2,6 +2,12 @@
 name: 'CloudFormation Deploy w/ PaC scan.'
 description: 'Performs a Policy-as-Code scan prior to deploying CloudFormation. If the scan fails, the scan does not proceed. Otherwise, it does.'
 inputs:
+  wiz_cli_key:
+     description: 'Wiz Access Key'
+     required: true
+  wiz_secret_key:
+      description: 'Wiz Secret Key'
+      required: true
   aws-access-key-id:
      description: 'AWS Access Key ID.'
      required: true
@@ -35,8 +41,8 @@ runs:
         uses: jstmcneil/wiz-action@1.0
         with:
           template-to-scan:         ${{inputs.template}}
-          wiz-access-key:           ${{secrets.wiz_cli_key}}
-          wiz-secret-key:           ${{secrets.wiz_secret_key}}
+          wiz-access-key:           ${{inputs.wiz_cli_key}}
+          wiz-secret-key:           ${{inputs.wiz_secret_key}}
       - name: Attempt-To-Deploy
         run: echo ""; echo -n "[2/2] Attempting to deploy supplied template!"
         shell: bash
